@@ -1,26 +1,31 @@
-﻿using UnityEngine;
+using UnityEngine;
 using UnityEngine.InputSystem;
 
 public class PlayerBehaviour : MonoBehaviour
 {
+    //Estructura para crear una variable: acceso - tipo de dato - nombre de la variable
     public float playerSpeed;
 
+    //Componente para reproducir audios
     private AudioSource playerAudio;
-    private Rigidbody2D rbPlayer;
-    private InputAction playerMove, playerJump;
-    private Vector2 moveInput;
 
+    private Rigidbody2D rbPlayer; //variable para el componente rigidbody del jugador
+    private InputAction playerMove, playerJump; //variable para guardar el sistema de controles
+    private Vector2 moveInput; //variable para guardar los valores de movimiento
+
+    public LayerMask groundLayer;   // Para detectar el suelo
+    private Transform groundDetector;
+
+    //Componente animator
     Animator playerAnimator;
-
-    // 🔽 Control de saltos
-    private int jumpCount = 0;
-    public int maxJumps = 2;
 
     private void Awake()
     {
-        rbPlayer = GetComponent<Rigidbody2D>();
-        playerMove = InputSystem.actions.FindAction("Move");
-        playerJump = InputSystem.actions.FindAction("Jump");
+        rbPlayer = GetComponent<Rigidbody2D>(); //asigno el componente rigidbody a la variable
+        playerAudio = GetComponent<AudioSource>();  //asigno el componente audio source a la variable
+        playerMove = InputSystem.actions.FindAction("Move"); //asigno la accion a la variable
+        playerJump = InputSystem.actions.FindAction("Jump"); //asigno la accion a la variable
+        groundDetector = transform.Find("GroundDetector");
     }
 
     private void OnEnable()
@@ -28,11 +33,7 @@ public class PlayerBehaviour : MonoBehaviour
         playerJump.started += _ => Jump();
     }
 
-    private void OnDisable()
-    {
-        playerJump.started -= _ => Jump();
-    }
-
+    // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
         playerAnimator = GetComponent<Animator>();
@@ -66,9 +67,13 @@ public class PlayerBehaviour : MonoBehaviour
         moveInput = playerMove.ReadValue<Vector2>();
     }
 
+    // Update is called once per frame
     void Update()
     {
         MoveInputDetected();
+
+        bool grounded = IsGrounded();
+        playerAnimator.SetBool("Isjumping", !grounded);
     }
 
     private void FixedUpdate()
@@ -78,22 +83,22 @@ public class PlayerBehaviour : MonoBehaviour
 
     void Jump()
     {
-        if (jumpCount < maxJumps)
-        {
-            // Resetear velocidad vertical para un salto más consistente
-            rbPlayer.linearVelocity = new Vector2(rbPlayer.linearVelocity.x, 0f);
+        // Solo puede saltar si está tocando el suelo
+        if (!IsGrounded())
+            return;
 
-            rbPlayer.AddForce(Vector2.up * 5f, ForceMode2D.Impulse);
-            jumpCount++;
-        }
+        // Aplicar salto
+        rbPlayer.AddForce(new Vector2(0, 7f), ForceMode2D.Impulse);
+        playerAudio.Play();
     }
 
-    // 🔽 Detectar suelo y reiniciar saltos
-    private void OnCollisionEnter2D(Collision2D collision)
+    bool IsGrounded()
     {
-        if (collision.gameObject.CompareTag("Ground"))
-        {
-            jumpCount = 0;
-        }
+        return Physics2D.OverlapBox(
+            groundDetector.position,
+            new Vector2(0.3f, 0.1f),    // tamaño del BoxDetector
+            0f,
+            groundLayer
+        );
     }
 }
