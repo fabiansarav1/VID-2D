@@ -1,19 +1,18 @@
 using UnityEngine;
-using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 using System.Collections;
 
-public class MainMenuManager : MonoBehaviour
+public class FadeInLevel : MonoBehaviour
 {
     public Image fadePanel;
-    public float fadeDuration = 1f;
+    public float fadeDuration = 1.5f;
 
-    public void PlayGame()
+    void Start()
     {
-        StartCoroutine(FadeAndLoad());
+        StartCoroutine(FadeIn());
     }
 
-    IEnumerator FadeAndLoad()
+    IEnumerator FadeIn()
     {
         float time = 0f;
 
@@ -23,12 +22,13 @@ public class MainMenuManager : MonoBehaviour
         {
             time += Time.deltaTime;
 
-            color.a = Mathf.Lerp(0f, 1f, time / fadeDuration);
+            color.a = Mathf.Lerp(1f, 0f, time / fadeDuration);
             fadePanel.color = color;
 
             yield return null;
         }
 
-        SceneManager.LoadScene("SampleScene");
+        color.a = 0f;
+        fadePanel.color = color;
     }
 }
